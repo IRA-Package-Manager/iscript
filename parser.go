@@ -77,22 +77,27 @@ func (p *Parser) Start(mode int, srcDir string) error {
 		}
 	}
 	for p.next(); p.token != scanner.EOF; p.next() {
-		switch p.token {
-		case scanner.Ident:
-			if p.text() == flag {
-				if flagParsed {
-					return fmt.Errorf("flag %s already parsed", flag)
+		if p.token == scanner.Ident {
+			fmt.Println(p.text())
+			if p.text() == "flag" {
+				p.next()
+				if p.text() == flag {
+					if flagParsed {
+						return fmt.Errorf("flag %q already parsed", flag)
+					} else {
+						fmt.Println("parsed flag")
+						flagParsed = true
+					}
+					continue
 				}
-				flagParsed = true
-			}
-
-			if !flagParsed {
-				continue
-			}
-			if IsFlag(p.text()) {
 				break
 			}
-			p.parseCommand(mode, srcDir)
+			if flagParsed {
+				err := p.parseCommand(mode, srcDir)
+				if err != nil {
+					return err
+				}
+			}
 		}
 	}
 	return nil

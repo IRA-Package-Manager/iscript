@@ -29,6 +29,7 @@ func runInstallCmd(str, srcDir, destdir string) error {
 	}
 	var out bytes.Buffer
 	cmd.Stdout = &out
+	cmd.Stderr = os.Stderr
 	err = cmd.Run()
 	if err != nil {
 		return fmt.Errorf("running command: %v", err)

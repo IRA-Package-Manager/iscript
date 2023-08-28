@@ -44,7 +44,7 @@ func (p *Parser) installPath(mode int, srcDir string) error {
 	if p.token != scanner.Int {
 		return fmt.Errorf("bad syntax after install: want int, got %q", p.text())
 	}
-	perm, err := strconv.ParseInt(p.text(), 0, 0)
+	perm, err := strconv.ParseInt(p.text(), 8, 0)
 	if err != nil {
 		// strange situation, drop panic
 		panic(err)
@@ -68,8 +68,9 @@ func (p *Parser) installPath(mode int, srcDir string) error {
 	if !ok {
 		return fmt.Errorf("incorrect path %q", dest)
 	}
+	fmt.Println(perm, fs.FileMode(perm))
 	dest = filepath.Join(p.installDir, dest)
-	err = createIfNotExists(dest, fs.FileMode(perm))
+	err = createIfNotExists(filepath.Dir(dest), fs.FileMode(perm))
 	if err != nil {
 		return fmt.Errorf("creating destination dir: %v", err)
 	}
@@ -130,7 +131,11 @@ func (p *Parser) createLinkFromPackage(mode int, srcDir string) error {
 	if p.token != scanner.String {
 		return fmt.Errorf("bad syntax after activate %q: want string, got %q", oldPath, p.text())
 	}
-	symlink := p.text()
+	symlink, err := strconv.Unquote(p.text())
+	if err != nil {
+		// scanner.String is double-quoted strng, must be no errors
+		panic(err)
+	}
 	if !filepath.IsAbs(symlink) {
 		return fmt.Errorf("%q must be absolute path", symlink)
 	}
@@ -140,7 +145,7 @@ func (p *Parser) createLinkFromPackage(mode int, srcDir string) error {
 		return fmt.Errorf("creating configuration dir: %v", err)
 	}
 
-	log, err := os.OpenFile(filepath.Join(p.installDir, ".ira", "activate.log"), os.O_APPEND&os.O_CREATE&os.O_RDWR, os.ModePerm)
+	log, err := os.OpenFile(filepath.Join(p.installDir, ".ira", "activate.log"), os.O_APPEND|os.O_CREATE|os.O_WRONLY, os.ModePerm)
 	if err != nil {
 		return fmt.Errorf("opening activation log: %v", err)
 	}

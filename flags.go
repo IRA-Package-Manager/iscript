@@ -6,7 +6,7 @@ const (
 	Update
 )
 
-var flags = map[int]string{Install: ":install:", Remove: ":remove:", Update: ":update:"}
+var flags = map[int]string{Install: "install", Remove: "remove", Update: "update"}
 
 // GetFlag takes parse modifier and returns flag
 func GetFlag(mode int) (string, bool) {
