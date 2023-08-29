@@ -9,10 +9,13 @@ import (
 )
 
 func TestParsingInstallSection(t *testing.T) {
+	os.RemoveAll("./test/out/.ira")
+	os.RemoveAll("./test/out/newdir")
 	parser, err := iscript.NewParser(filepath.Join(".", "test", "pkg", "iscript_test"), filepath.Join(".", "test", "out"))
 	if err != nil {
 		t.Fatal(err)
 	}
+	parser.Debug = true
 	err = parser.Start(iscript.Install, filepath.Join(".", "test", "pkg"))
 	if err != nil {
 		t.Fatal(err)

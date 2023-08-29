@@ -15,6 +15,7 @@ type Parser struct {
 	token      rune
 	installDir string
 	working    bool
+	Debug      bool // used in tests (verbose mode)
 }
 
 func (p *Parser) init(path string, installDir string) error {
@@ -33,6 +34,7 @@ func (p *Parser) init(path string, installDir string) error {
 
 // NewParser creates a new parser and initialise it.
 // path is a path to script. installDir is a directory where package is (or would be) installed
+// debug must be used only in debug
 func NewParser(path string, installDir string) (*Parser, error) {
 	parser := new(Parser)
 	err := parser.init(path, installDir)
@@ -78,14 +80,18 @@ func (p *Parser) Start(mode int, srcDir string) error {
 	}
 	for p.next(); p.token != scanner.EOF; p.next() {
 		if p.token == scanner.Ident {
-			fmt.Println(p.text())
+			if p.Debug {
+				fmt.Println(p.text())
+			}
 			if p.text() == "flag" {
 				p.next()
 				if p.text() == flag {
 					if flagParsed {
 						return fmt.Errorf("flag %q already parsed", flag)
 					} else {
-						fmt.Println("parsed flag")
+						if p.Debug {
+							fmt.Println("parsed flag")
+						}
 						flagParsed = true
 					}
 					continue

@@ -68,7 +68,9 @@ func (p *Parser) installPath(mode int, srcDir string) error {
 	if !ok {
 		return fmt.Errorf("incorrect path %q", dest)
 	}
-	fmt.Println(perm, fs.FileMode(perm))
+	if p.Debug {
+		fmt.Println(perm, fs.FileMode(perm))
+	}
 	dest = filepath.Join(p.installDir, dest)
 	err = createIfNotExists(filepath.Dir(dest), fs.FileMode(perm))
 	if err != nil {
