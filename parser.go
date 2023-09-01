@@ -89,15 +89,17 @@ func (p *Parser) Start(mode int, srcDir string) error {
 				if p.text() == flag {
 					if flagParsed {
 						return fmt.Errorf("flag %q already parsed", flag)
-					} else {
-						if p.Debug {
-							fmt.Println("parsed flag")
-						}
-						flagParsed = true
 					}
+					if p.Debug {
+						fmt.Println("parsed flag")
+					}
+					flagParsed = true
 					continue
 				}
-				break
+				if flagParsed {
+					break
+				}
+				continue
 			}
 			if flagParsed {
 				err := p.parseCommand(mode, srcDir)
@@ -154,8 +156,8 @@ func (p *Parser) parseCommand(mode int, srcDir string) error {
 			panic(err)
 		}
 		fmt.Println(output)
+		return nil
 	default:
 		return fmt.Errorf("invalid command: %q", p.text())
 	}
-	panic(nil)
 }

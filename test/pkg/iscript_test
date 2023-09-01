@@ -1,10 +1,10 @@
 flag install
 cmdlin "echo $srcDir"
-install 777 mkdir "/newdir"
-install 777 mv "/newdir/script.bat" "/script.bat"
+mkdir "/newdir" 777
+install 777 "/newdir/script.bat" "/script.bat"
 activate "/newdir/script.bat" "/home/andev/link"
 flag remove
 print "Hello"
 mkdir "/newdir" 777
-cmdlin "touch ~/newdir/test.txt"
+cmdlin "touch ./newdir/test.txt"
 remove "/newdir"
