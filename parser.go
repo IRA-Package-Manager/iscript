@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"runtime"
+	"strconv"
 	"sync"
 	"text/scanner"
 )
@@ -88,15 +89,17 @@ func (p *Parser) Start(mode int, srcDir string) error {
 				if p.text() == flag {
 					if flagParsed {
 						return fmt.Errorf("flag %q already parsed", flag)
-					} else {
-						if p.Debug {
-							fmt.Println("parsed flag")
-						}
-						flagParsed = true
 					}
+					if p.Debug {
+						fmt.Println("parsed flag")
+					}
+					flagParsed = true
 					continue
 				}
-				break
+				if flagParsed {
+					break
+				}
+				continue
 			}
 			if flagParsed {
 				err := p.parseCommand(mode, srcDir)
@@ -127,13 +130,33 @@ func (p *Parser) parseCommand(mode int, srcDir string) error {
 			return fmt.Errorf("install operation is allowed only in install mode")
 		}
 		p.next()
-		return p.installPath(mode, srcDir)
+		return p.installPath(srcDir)
 	case "activate":
 		if mode != Install {
 			return fmt.Errorf("activation is allowed only in install mode")
 		}
 		p.next()
-		return p.createLinkFromPackage(mode, srcDir)
+		return p.createLinkFromPackage(srcDir)
+	case "remove":
+		if mode != Remove {
+			return fmt.Errorf("remove operation is allowed only in install mode")
+		}
+		p.next()
+		return p.remove()
+	case "mkdir":
+		p.next()
+		return p.mkdir()
+	case "print":
+		p.next()
+		if p.token != scanner.String {
+			return fmt.Errorf("bad syntax after print: want string, got %q", p.text())
+		}
+		output, err := strconv.Unquote(p.text())
+		if err != nil {
+			panic(err)
+		}
+		fmt.Println(output)
+		return nil
 	default:
 		return fmt.Errorf("invalid command: %q", p.text())
 	}

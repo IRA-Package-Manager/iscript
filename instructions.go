@@ -1,9 +1,12 @@
 package iscript
 
 import (
+	"bytes"
 	"fmt"
 	"io/fs"
+	"log"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -33,14 +36,47 @@ func (p *Parser) runCmd(mode int, srcDir string) error {
 		// scanner.String is double-quoted strng, must be no errors
 		panic(err)
 	}
-	switch mode {
-	case Install:
-		return runInstallCmd(str, srcDir, p.installDir)
+	if mode == Install {
+		str = strings.ReplaceAll(str, "$destdir", p.installDir)
+		str = strings.ReplaceAll(str, "$srcDir", srcDir)
 	}
-	return fmt.Errorf("unsupported mode: %d", mode)
+	currentDir, err := os.Getwd()
+	if err != nil {
+		return fmt.Errorf("os.Getwd(): %v", err)
+	}
+	var workDir string
+	if mode == Install || mode == Update {
+		workDir = srcDir
+	} else {
+		workDir = p.installDir
+	}
+	err = os.Chdir(workDir)
+	if err != nil {
+		return fmt.Errorf("os.Chdir(): %v", err)
+	}
+	args := strings.Split(str, " ")
+	var cmd *exec.Cmd
+	if len(args) == 1 {
+		cmd = exec.Command(args[0])
+	} else {
+		cmd = exec.Command(args[0], args[1:]...)
+	}
+	var out bytes.Buffer
+	cmd.Stdout = &out
+	cmd.Stderr = os.Stderr
+	err = cmd.Run()
+	if err != nil {
+		return fmt.Errorf("running command: %v", err)
+	}
+	log.Println(out)
+	err = os.Chdir(currentDir)
+	if err != nil {
+		return fmt.Errorf("restoring work dir: %v", err)
+	}
+	return nil
 }
 
-func (p *Parser) installPath(mode int, srcDir string) error {
+func (p *Parser) installPath(srcDir string) error {
 	if p.token != scanner.Int {
 		return fmt.Errorf("bad syntax after install: want int, got %q", p.text())
 	}
@@ -50,13 +86,8 @@ func (p *Parser) installPath(mode int, srcDir string) error {
 		panic(err)
 	}
 	p.next()
-	if p.token != scanner.Ident {
-		return fmt.Errorf("bad syntax after install %d: want identifier, got %q", perm, p.text())
-	}
-	flag := p.text()
-	p.next()
 	if p.token != scanner.String {
-		return fmt.Errorf("bad syntax after install %d %s: want string, got %q", perm, flag, p.text())
+		return fmt.Errorf("bad syntax after install %d: want string, got %q", perm, p.text())
 	}
 	dest, err := strconv.Unquote(p.text())
 	if err != nil {
@@ -76,12 +107,9 @@ func (p *Parser) installPath(mode int, srcDir string) error {
 	if err != nil {
 		return fmt.Errorf("creating destination dir: %v", err)
 	}
-	if flag == "mkdir" {
-		return nil
-	}
 	p.next()
 	if p.token != scanner.String {
-		return fmt.Errorf("bad syntax after install %d %s %q: want string, got %q", perm, flag, oldDest, p.text())
+		return fmt.Errorf("bad syntax after install %d %q: want string, got %q", perm, oldDest, p.text())
 	}
 	src, err := strconv.Unquote(p.text())
 	if err != nil {
@@ -113,7 +141,7 @@ func (p *Parser) installPath(mode int, srcDir string) error {
 	return nil
 }
 
-func (p *Parser) createLinkFromPackage(mode int, srcDir string) error {
+func (p *Parser) createLinkFromPackage(srcDir string) error {
 	if p.token != scanner.String {
 		return fmt.Errorf("bad syntax after activate: want string, got %q", p.text())
 	}
@@ -159,6 +187,54 @@ func (p *Parser) createLinkFromPackage(mode int, srcDir string) error {
 	_, err = log.Write(append([]byte(symlink), '\n'))
 	if err != nil {
 		return fmt.Errorf("writing %q in log: %v", symlink, err)
+	}
+	return nil
+}
+
+func (p *Parser) remove() error {
+	if p.token != scanner.String {
+		return fmt.Errorf("bad syntax after remove: want string, got %q", p.text())
+	}
+	path, err := strconv.Unquote(p.text())
+	if err != nil {
+		panic(err)
+	}
+	path, ok := validatePath(path)
+	if !ok {
+		return fmt.Errorf("incorrect path %q", path)
+	}
+	err = os.RemoveAll(filepath.Join(p.installDir, path))
+	if err != nil {
+		return fmt.Errorf("removing %q: %v", path, err)
+	}
+	return nil
+}
+func (p *Parser) mkdir() error {
+	if p.token != scanner.String {
+		return fmt.Errorf("bad syntax after mkdir: want string, got %q", p.text())
+	}
+	path, err := strconv.Unquote(p.text())
+	if err != nil {
+		panic(err)
+	}
+	newPath, ok := validatePath(path)
+	if !ok {
+		return fmt.Errorf("incorrect path %q", path)
+	}
+	p.next()
+	if p.token != scanner.Int {
+		return fmt.Errorf("bad syntax after mkdir %q: want int, got %q", path, p.text())
+	}
+	perm, err := strconv.ParseInt(p.text(), 8, 0)
+	if err != nil {
+		panic(err)
+	}
+	if p.Debug {
+		fmt.Println("mkdir", newPath, fs.FileMode(perm))
+	}
+	err = createIfNotExists(filepath.Join(p.installDir, newPath), fs.FileMode(perm))
+	if err != nil {
+		return fmt.Errorf("creating %q: %v", newPath, err)
 	}
 	return nil
 }
