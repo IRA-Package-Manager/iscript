@@ -40,7 +40,7 @@ func (p *Parser) runCmd(mode int, srcDir string) error {
 	return fmt.Errorf("unsupported mode: %d", mode)
 }
 
-func (p *Parser) installPath(mode int, srcDir string) error {
+func (p *Parser) installPath(srcDir string) error {
 	if p.token != scanner.Int {
 		return fmt.Errorf("bad syntax after install: want int, got %q", p.text())
 	}
@@ -113,7 +113,7 @@ func (p *Parser) installPath(mode int, srcDir string) error {
 	return nil
 }
 
-func (p *Parser) createLinkFromPackage(mode int, srcDir string) error {
+func (p *Parser) createLinkFromPackage(srcDir string) error {
 	if p.token != scanner.String {
 		return fmt.Errorf("bad syntax after activate: want string, got %q", p.text())
 	}
@@ -159,6 +159,51 @@ func (p *Parser) createLinkFromPackage(mode int, srcDir string) error {
 	_, err = log.Write(append([]byte(symlink), '\n'))
 	if err != nil {
 		return fmt.Errorf("writing %q in log: %v", symlink, err)
+	}
+	return nil
+}
+
+func (p *Parser) remove() error {
+	if p.token != scanner.String {
+		return fmt.Errorf("bad syntax after remove: want string, got %q", p.text())
+	}
+	path, err := strconv.Unquote(p.text())
+	if err != nil {
+		panic(err)
+	}
+	path, ok := validatePath(path)
+	if !ok {
+		return fmt.Errorf("incorrect path %q", path)
+	}
+	err = os.RemoveAll(path)
+	if err != nil {
+		return fmt.Errorf("removing %q: %v", path, err)
+	}
+	return nil
+}
+func (p *Parser) mkdir() error {
+	if p.token != scanner.String {
+		return fmt.Errorf("bad syntax after mkdir: want string, got %q", p.text())
+	}
+	path, err := strconv.Unquote(p.text())
+	if err != nil {
+		panic(err)
+	}
+	newPath, ok := validatePath(path)
+	if !ok {
+		return fmt.Errorf("incorrect path %q", path)
+	}
+	p.next()
+	if p.token != scanner.Int {
+		return fmt.Errorf("bad syntax after mkdir %q: want int, got %q", path, p.text())
+	}
+	perm, err := strconv.ParseInt(p.text(), 8, 0)
+	if err != nil {
+		panic(err)
+	}
+	err = createIfNotExists(newPath, fs.FileMode(perm))
+	if err != nil {
+		return fmt.Errorf("creating %q: %v", newPath, err)
 	}
 	return nil
 }
