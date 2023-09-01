@@ -26,10 +26,10 @@ func TestParsingInstallSection(t *testing.T) {
 	if !exists("./test/out/newdir/script.bat") {
 		t.Fatal("Script wasn't installed")
 	}
-	if !exists("/home/andev/link") {
+	if !exists("/tmp/link") {
 		t.Fatal("Link wasn't created")
 	}
-	os.Remove("/home/andev/link")
+	os.Remove("/tmp/link")
 }
 
 func exists(filePath string) bool {
