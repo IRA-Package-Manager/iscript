@@ -2,7 +2,7 @@ flag install
 cmdlin "echo $srcDir"
 mkdir "/newdir" 777
 install 777 "/newdir/script.bat" "/script.bat"
-activate "/newdir/script.bat" "/home/andev/link"
+activate "/newdir/script.bat" "/tmp/link"
 flag remove
 print "Hello"
 mkdir "/newdir" 777
