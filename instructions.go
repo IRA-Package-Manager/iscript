@@ -49,7 +49,7 @@ func (p *Parser) runCmd(mode int, srcDir string) error {
 		str = strings.ReplaceAll(str, "$srcdir", absSrcDir)
 		str = strings.ReplaceAll(str, "$destdir", absInstallDir)
 	case Remove:
-		str = strings.ReplaceAll(str, "$installdir", absInstallDir)
+		str = strings.ReplaceAll(str, "$pkg", absInstallDir)
 	case Update:
 		str = strings.ReplaceAll(str, "$oldpkg", absSrcDir)
 		str = strings.ReplaceAll(str, "$newpkg", absInstallDir)

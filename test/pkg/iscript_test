@@ -6,5 +6,5 @@ activate "/newdir/script.bat" "/tmp/link"
 flag remove
 print "Hello"
 mkdir "/newdir" 777
-cmdlin "touch ./newdir/test.txt"
+cmdlin "touch $pkg/newdir/test.txt"
 remove "/newdir"
