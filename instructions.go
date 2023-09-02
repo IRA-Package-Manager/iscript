@@ -36,9 +36,23 @@ func (p *Parser) runCmd(mode int, srcDir string) error {
 		// scanner.String is double-quoted strng, must be no errors
 		panic(err)
 	}
-	if mode == Install {
-		str = strings.ReplaceAll(str, "$destdir", p.installDir)
-		str = strings.ReplaceAll(str, "$srcDir", srcDir)
+	// Note: ignoring errors
+	absInstallDir, _ := filepath.Abs(p.installDir)
+	var absSrcDir string
+	if srcDir == "" {
+		absSrcDir = ""
+	} else {
+		absSrcDir, _ = filepath.Abs(srcDir)
+	}
+	switch mode {
+	case Install:
+		str = strings.ReplaceAll(str, "$srcdir", absSrcDir)
+		str = strings.ReplaceAll(str, "$destdir", absInstallDir)
+	case Remove:
+		str = strings.ReplaceAll(str, "$installdir", absInstallDir)
+	case Update:
+		str = strings.ReplaceAll(str, "$oldpkg", absSrcDir)
+		str = strings.ReplaceAll(str, "$newpkg", absInstallDir)
 	}
 	currentDir, err := os.Getwd()
 	if err != nil {
@@ -68,7 +82,9 @@ func (p *Parser) runCmd(mode int, srcDir string) error {
 	if err != nil {
 		return fmt.Errorf("running command: %v", err)
 	}
-	log.Println(out)
+	if len(out.Bytes()) != 0 {
+		log.Println(out.String())
+	}
 	err = os.Chdir(currentDir)
 	if err != nil {
 		return fmt.Errorf("restoring work dir: %v", err)

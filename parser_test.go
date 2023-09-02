@@ -21,15 +21,18 @@ func TestParsingInstallSection(t *testing.T) {
 		t.Fatal(err)
 	}
 	if !exists("./test/out/newdir") {
-		t.Fatal("Directory wasn't created")
+		t.Error("Directory wasn't created")
+	} else if !exists("./test/out/newdir/script.bat") {
+		t.Error("Script wasn't installed")
 	}
-	if !exists("./test/out/newdir/script.bat") {
-		t.Fatal("Script wasn't installed")
+	if !exists("./test/pkg/testfile.txt") {
+		t.Error("Command wasn't executed")
 	}
 	if !exists("/tmp/link") {
-		t.Fatal("Link wasn't created")
+		t.Error("Link wasn't created")
 	}
 	os.Remove("/tmp/link")
+	os.Remove("./test/pkg/testfile.txt")
 }
 
 func TestParsingRemoveSection(t *testing.T) {
