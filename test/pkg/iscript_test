@@ -1,10 +1,10 @@
 flag install
-cmdlin "echo $srcDir"
+cmdlin "touch $srcdir/testfile.txt"
 mkdir "/newdir" 777
 install 777 "/newdir/script.bat" "/script.bat"
 activate "/newdir/script.bat" "/tmp/link"
 flag remove
 print "Hello"
 mkdir "/newdir" 777
-cmdlin "touch ./newdir/test.txt"
+cmdlin "touch $pkg/newdir/test.txt"
 remove "/newdir"
