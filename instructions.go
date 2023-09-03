@@ -200,7 +200,7 @@ func (p *Parser) createLinkFromPackage(srcDir string) error {
 	if err != nil {
 		return fmt.Errorf("creating symbolic link: %v", err)
 	}
-	_, err = log.Write(append([]byte(symlink), '\n'))
+	_, err = log.WriteString(path + " " + symlink + "\n")
 	if err != nil {
 		return fmt.Errorf("writing %q in log: %v", symlink, err)
 	}
